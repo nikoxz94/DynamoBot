@@ -1,0 +1,1 @@
+console.log("Il mio Bot di Twitch");
