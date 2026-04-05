@@ -7,7 +7,6 @@ import { launchBot } from './bot.js';
 async function main() {
     try{
         console.log("Tentativo di avvio bot...")
-        console.log(`Client ID caricato: ${authProvider.clientId}`);
         await launchBot(authProvider);
     } catch (error){
         console.error("Si è verificato un errore all'avvio:", error);

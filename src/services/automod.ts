@@ -4,33 +4,39 @@ import { ChatClient } from '@twurple/chat';
 import { ApiClient } from '@twurple/api';
 
 // 1. DEFINIZIONE DELLA CACHE (Fuori dalla funzione così è globale per questo file)
-let bannedWordsCache: string[] = [];
-const banWordsPath = path.join(process.cwd(), 'src/data/banwords.json');
+let wordsCache = {
+    banned: [] as string[],
+    spoilers: [] as string[]
+};
+const WordsPath = path.join(process.cwd(), 'src/data/words.json');
 
 // 2. FUNZIONE PER CARICARE I DATI
-const loadBanWords = () => {
+const loadWords = () => {
     try {
-        const fileContent = fs.readFileSync(banWordsPath, 'utf-8');
+        const fileContent = fs.readFileSync(WordsPath, 'utf-8');
         const data = JSON.parse(fileContent);
-        bannedWordsCache = data.bannedWords || [];
-        console.log("[AutoMod] Cache aggiornata con successo.");
+        wordsCache.banned = data.banned || [];
+        wordsCache.spoilers = data.spoilers || [];
+        console.log("[AutoMod] Cache parole aggiornata con successo.");
     } catch (e) {
         console.error("[AutoMod] Errore nel caricamento delle banwords:", e);
-        bannedWordsCache = []; // Reset per sicurezza in caso di errore
+        wordsCache.banned = []; // Reset per sicurezza in caso di errore
+        wordsCache.spoilers = [];
+
     }
 };
 
 // 3. IL WATCHER (Osserva il file e ricarica se cambia)
-fs.watchFile(banWordsPath, (curr, prev) => {
+fs.watchFile(WordsPath, (curr, prev) => {
     if (curr.mtime !== prev.mtime) { // Controlla se l'ora di modifica è cambiata
-        console.log("[AutoMod] Rilevata modifica al file JSON...");
-        loadBanWords();
+        console.log("[AutoMod] Rilevata modifica al file JSON banWords...");
+        loadWords();
     }
 });
 
 export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient) => {
     // Carichiamo la lista la prima volta all'avvio
-    loadBanWords();
+    loadWords();
 
     const me = await apiClient.users.getUserByName(process.env.TWITCH_BOT_USERNAME!);
     const broadcaster = await apiClient.users.getUserByName(process.env.TWITCH_CHANNEL!);
@@ -43,14 +49,27 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
         const lowerText = text.toLowerCase();
         
         // 4. USO DELLA CACHE (Velocissimo, niente lettura da disco qui!)
-        if (bannedWordsCache.some(word => lowerText.includes(word.toLowerCase()))) {
+        if (wordsCache.banned.some(word => lowerText.includes(word.toLowerCase()))) {
             try {
                 await apiClient.asUser(me.id, async ctx => {
                     await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
                 });
                 await chatClient.say(channel, `@${user}, DynamoBot ha attivato lo scudo anti-parolacce. Messaggio polverizzato! 🚫`);
+                return;
             } catch (error) {
-                console.error("[AutoMod] Errore durante l'eliminazione:", error);
+                console.error("[AutoMod] Errore durante l'eliminazione del messaggio:", error);
+            }
+        }
+        // --- CONTROLLO SPOILER ---
+        if (wordsCache.spoilers.some(word => lowerText.includes(word.toLowerCase()))) {
+            try {
+                await apiClient.asUser(me.id, async ctx => {
+                    await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
+                });
+                // Messaggio più specifico e gentile per gli spoiler
+                await chatClient.say(channel, `@${user}, DynamoBot ha rilevato un possibile spoiler. Messaggio rimosso per sicurezza! 🤫`);
+            } catch (error) {
+                console.error("[AutoMod] Errore durante l'eliminazione (Spoiler):", error);
             }
         }
     });
