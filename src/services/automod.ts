@@ -57,7 +57,7 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
                 await chatClient.say(channel, `@${user}, DynamoBot ha attivato lo scudo anti-parolacce. Messaggio polverizzato! 🚫`);
                 return;
             } catch (error) {
-                console.error("[AutoMod] Errore durante l'eliminazione del messaggio:", error);
+                console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Banned):", error);
             }
         }
         // --- CONTROLLO SPOILER ---
@@ -68,8 +68,9 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
                 });
                 // Messaggio più specifico e gentile per gli spoiler
                 await chatClient.say(channel, `@${user}, DynamoBot ha rilevato un possibile spoiler. Messaggio rimosso per sicurezza! 🤫`);
+                return;
             } catch (error) {
-                console.error("[AutoMod] Errore durante l'eliminazione (Spoiler):", error);
+                console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Spoiler):", error);
             }
         }
     });

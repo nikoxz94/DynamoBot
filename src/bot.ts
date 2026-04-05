@@ -6,6 +6,11 @@ import * as automod from './services/automod.js';
 
 export async function launchBot(authProvider: AuthProvider) {
     
+    const channel = process.env.TWITCH_CHANNEL;
+    if (!channel) {
+        throw new Error("Manca TWITCH_CHANNEL nel file .env"); 
+    }   
+
     // 1. Inizializzazione Client
     const apiClient = new ApiClient({ authProvider });
     const chatClient = new ChatClient({ 
@@ -22,5 +27,10 @@ export async function launchBot(authProvider: AuthProvider) {
         console.log('✅ DynamoBot_ è online e i moduli sono carichi!');
     });
 
+    chatClient.onDisconnect((manually, reason) => {
+    console.error(`❌ Disconnesso: ${reason}`);
+});
+
     chatClient.connect();
+    return chatClient;
 }

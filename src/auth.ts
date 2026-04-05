@@ -3,13 +3,13 @@ import { promises as fs } from 'fs';
 import 'dotenv/config';
 
 //Credenziali recuperate dal file .env
-const clientId = process.env.TWITCH_USER!;
-const clientSecret = process.env.TWITCH_AUTH!;
+const clientId = process.env.TWITCH_CLIENT_ID!;
+const clientSecret = process.env.TWITCH_CLIENT_SECRET!;
 const tokenPath = './tokens.json';
  
 //Controllo delle chiavi
 if (!clientId || !clientSecret){
-    throw new Error('ERROE: CLIENT_ID o TWITCH_AUTH mancanti nel file .env');
+    throw new Error('ERROE: TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET mancanti nel file .env');
 }
 
 // Usiamo un try/catch così se il file non esiste ci dà un errore chiaro
@@ -32,7 +32,8 @@ authProvider.onRefresh(async (userId, newTokenData) => {
     console.log('[Auth] Token rinnovati e salvati in tokens.json');
 });
 
-// Twurple capirà l'ID utente direttamente dal token
+
+// Ora diciamo a Twurple: "Usa questi token per QUESTO utente specifico"
 await authProvider.addUserForToken(tokenData, ['chat']);
 
 console.log("Autenticazione configurata correttamente");
