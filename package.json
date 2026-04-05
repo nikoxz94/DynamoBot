@@ -1,5 +1,5 @@
 {
-  "name": "twitchbot",
+  "name": "dynamobot",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nikoxz94/TwitchBot.git"
+    "url": "git+https://github.com/nikoxz94/DynamoBot.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/nikoxz94/TwitchBot/issues"
+    "url": "https://github.com/nikoxz94/DynamoBot/issues"
   },
-  "homepage": "https://github.com/nikoxz94/TwitchBot#readme",
+  "homepage": "https://github.com/nikoxz94/DynamoBot#readme",
   "devDependencies": {
     "@types/node": "^25.5.2",
     "ts-node": "^10.9.2",
