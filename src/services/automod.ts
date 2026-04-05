@@ -54,7 +54,7 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
                 await apiClient.asUser(me.id, async ctx => {
                     await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
                 });
-                await chatClient.say(channel, `@${user}, DynamoBot ha attivato lo scudo anti-parolacce. Messaggio polverizzato! 🚫`);
+                await chatClient.say(channel, `@${user}, ${process.env.TWITCH_BOT_DISPLAY_NAME}! ha attivato lo scudo anti-parolacce. Messaggio polverizzato! 🚫`);
                 return;
             } catch (error) {
                 console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Banned):", error);
@@ -67,7 +67,7 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
                     await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
                 });
                 // Messaggio più specifico e gentile per gli spoiler
-                await chatClient.say(channel, `@${user}, DynamoBot ha rilevato un possibile spoiler. Messaggio rimosso per sicurezza! 🤫`);
+                await chatClient.say(channel, `@${user}, ${process.env.TWITCH_BOT_DISPLAY_NAME}! ha rilevato un possibile spoiler. Messaggio rimosso per sicurezza! 🤫`);
                 return;
             } catch (error) {
                 console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Spoiler):", error);
