@@ -27,7 +27,10 @@ const commands: Record<string, BotCommand> = {
     so,
     ig: social,    // Alias: !ig farà la stessa cosa di !social
     ds: social,
-    tg: social
+    tg: social,
+    discord: social,
+    telegram: social,
+    instagram: social
 };
 
 export const setupCommandHandler = (chatClient: ChatClient, apiClient: ApiClient) => {
