@@ -3,5 +3,10 @@
     "instagram": "https://instagram.com/tuonome",
     "telegram": "https://t.me/tuocanale",
     "discord": "https://discord.gg/invito"
+  },
+  "customCommands": {
+    "tastiera": "Uso una Epomaker TH80! ⌨️",
+    "pc": "Processore Ryzen 9700X, 32GB RAM, RTX 5070Ti 💻",
+    "orari": "Siamo live ogni lunedì, mercoledì e venerdì dalle 21:00! 🕒"
   }
 }

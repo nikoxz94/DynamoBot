@@ -3,14 +3,16 @@ import * as path from 'path';
 import { ChatClient } from '@twurple/chat';
 import { ApiClient } from '@twurple/api';
 
-// 1. DEFINIZIONE DELLA CACHE (Fuori dalla funzione così è globale per questo file)
 let wordsCache = {
     banned: [] as string[],
     spoilers: [] as string[]
 };
+
+// Variabile per evitare di spammare l'avviso "Non sono mod"
+let hasWarnedNoMod = false;
+
 const WordsPath = path.join(process.cwd(), 'src/data/words.json');
 
-// 2. FUNZIONE PER CARICARE I DATI
 const loadWords = () => {
     try {
         const fileContent = fs.readFileSync(WordsPath, 'utf-8');
@@ -20,22 +22,19 @@ const loadWords = () => {
         console.log("[AutoMod] Cache parole aggiornata con successo.");
     } catch (e) {
         console.error("[AutoMod] Errore nel caricamento delle banwords:", e);
-        wordsCache.banned = []; // Reset per sicurezza in caso di errore
+        wordsCache.banned = [];
         wordsCache.spoilers = [];
-
     }
 };
 
-// 3. IL WATCHER (Osserva il file e ricarica se cambia)
 fs.watchFile(WordsPath, (curr, prev) => {
-    if (curr.mtime !== prev.mtime) { // Controlla se l'ora di modifica è cambiata
-        console.log("[AutoMod] Rilevata modifica al file JSON banWords...");
+    if (curr.mtime !== prev.mtime) {
+        console.log("[AutoMod] Rilevata modifica al file JSON...");
         loadWords();
     }
 });
 
-export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient) => {
-    // Carichiamo la lista la prima volta all'avvio
+export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient, botId: String) => {
     loadWords();
 
     const me = await apiClient.users.getUserByName(process.env.TWITCH_BOT_USERNAME!);
@@ -44,33 +43,39 @@ export const setupAutoMod = async (chatClient: ChatClient, apiClient: ApiClient)
     if (!me || !broadcaster) return;
 
     chatClient.onMessage(async (channel, user, text, msg) => {
-        if (msg.userInfo.isBroadcaster) return;
+        if (msg.userInfo.isBroadcaster || msg.userInfo.userId === botId) return;
 
         const lowerText = text.toLowerCase();
-        
-        // 4. USO DELLA CACHE (Velocissimo, niente lettura da disco qui!)
-        if (wordsCache.banned.some(word => lowerText.includes(word.toLowerCase()))) {
+        const isBanned = wordsCache.banned.some(word => lowerText.includes(word.toLowerCase()));
+        const isSpoiler = wordsCache.spoilers.some(word => lowerText.includes(word.toLowerCase()));
+
+        if (isBanned || isSpoiler) {
             try {
                 await apiClient.asUser(me.id, async ctx => {
                     await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
                 });
-                await chatClient.say(channel, `@${user}, ${process.env.TWITCH_BOT_DISPLAY_NAME}! ha attivato lo scudo anti-parolacce. Messaggio polverizzato! 🚫`);
-                return;
-            } catch (error) {
-                console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Banned):", error);
-            }
-        }
-        // --- CONTROLLO SPOILER ---
-        if (wordsCache.spoilers.some(word => lowerText.includes(word.toLowerCase()))) {
-            try {
-                await apiClient.asUser(me.id, async ctx => {
-                    await ctx.moderation.deleteChatMessages(broadcaster.id, msg.id);
-                });
-                // Messaggio più specifico e gentile per gli spoiler
-                await chatClient.say(channel, `@${user}, ${process.env.TWITCH_BOT_DISPLAY_NAME}! ha rilevato un possibile spoiler. Messaggio rimosso per sicurezza! 🤫`);
-                return;
-            } catch (error) {
-                console.error("[AutoMod] Errore durante l'eliminazione del messaggio (Spoiler):", error);
+
+                // Se l'eliminazione ha successo, resettiamo il flag dell'avviso
+                hasWarnedNoMod = false;
+
+                const alertMsg = isBanned 
+                    ? `@${user}, lo scudo anti-parolacce di ${process.env.TWITCH_BOT_DISPLAY_NAME} ha polverizzato il tuo messaggio! 🚫`
+                    : `@${user}, possibile spoiler rilevato da ${process.env.TWITCH_BOT_DISPLAY_NAME}. Messaggio rimosso per sicurezza! 🤫`;
+                
+                await chatClient.say(channel, alertMsg);
+
+            } catch (error: any) {
+                // --- GESTIONE ERRORE 403 (MODERATORE MANCANTE) ---
+                if (error.statusCode === 403) {
+                    console.warn("[AutoMod] Azione fallita: Il bot non è moderatore.");
+                    
+                    if (!hasWarnedNoMod) {
+                        await chatClient.say(channel, `⚠️ Ehi @${process.env.TWITCH_CHANNEL}, ho provato a moderare ma non ho i poteri! Scrivi /mod ${process.env.TWITCH_BOT_DISPLAY_NAME} per attivarmi.`);
+                        hasWarnedNoMod = true; // Impedisce di ripetere l'avviso per ogni messaggio
+                    }
+                } else {
+                    console.error("[AutoMod] Errore imprevisto:", error.message);
+                }
             }
         }
     });

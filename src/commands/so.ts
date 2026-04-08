@@ -1,5 +1,6 @@
 import { ChatClient } from '@twurple/chat';
-import { CommandContext } from '../handlers/command_handler.js';
+import { CommandContext } from '../interfaces/bot.interfaces.js';
+
 
 export const run = async (chatClient: ChatClient, channel: string, ctx: CommandContext) => {
     

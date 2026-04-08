@@ -1,14 +1,16 @@
 import 'dotenv/config';
-import { authProvider } from './auth.js';
+import { getAuthProvider } from './auth.js';
 import { launchBot } from './bot.js';
 
 
 async function main() {
     try {
         console.log("Tentativo di avvio bot...");
+
+        const { authProvider, botId } = await getAuthProvider(); 
         
-        // Salviamo il client che viene restituito da launchBot
-        const chatClient = await launchBot(authProvider);
+        // Passiamo entrambi a launchBot
+        const chatClient = await launchBot(authProvider, botId);        // Salviamo il client che viene restituito da launchBot
 
         // --- GESTIONE SPEGNIMENTO PULITO ---
         process.on('SIGINT', () => {
