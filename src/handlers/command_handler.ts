@@ -2,11 +2,21 @@ import { ChatClient, ChatMessage } from '@twurple/chat';
 // Importiamo i comandi (Assicurati che esportino una funzione chiamata 'run')
 import * as ping from '../commands/ping.js';
 import * as social from '../commands/social.js';
+import * as so from '../commands/so.js';
+import { ApiClient } from '@twurple/api';
+
+export interface CommandContext {
+    user: string;
+    text: string;
+    msg: ChatMessage;
+    apiClient: ApiClient;
+    // Qui in futuro aggiungerai: obs, db, ecc. senza cambiare niente
+}
 
 // 1. Definiamo l'interfaccia per un comando tipo
 // Questo garantisce che ogni comando abbia una funzione 'run' con i parametri giusti
 interface BotCommand {
-    run: (chatClient: ChatClient, channel: string, user: string, text: string, msg: ChatMessage) => Promise<void> | void;
+    run: (chatClient: ChatClient, channel: string, ctx : CommandContext) => Promise<void> | void;
 }
 
 // 2. Mappa dei comandi (Dizionario)
@@ -14,13 +24,14 @@ interface BotCommand {
 const commands: Record<string, BotCommand> = {
     ping,
     social,
+    so,
     ig: social,    // Alias: !ig farà la stessa cosa di !social
-    insta: social,  // Alias: !insta
-    ds: social
+    ds: social,
+    tg: social
 };
 
-export const setupCommandHandler = (chatClient: ChatClient) => {
-    chatClient.onMessage((channel, user, text, msg) => {
+export const setupCommandHandler = (chatClient: ChatClient, apiClient: ApiClient) => {
+    chatClient.onMessage(async (channel, user, text, msg) => {
         // Ignora messaggi che non iniziano con ! o che sono solo "!"
         if (!text.startsWith('!') || text.trim().length === 1) return;
 
@@ -33,10 +44,17 @@ export const setupCommandHandler = (chatClient: ChatClient) => {
         // 4. Esecuzione
         if (commandName && commands[commandName]) {
             const command = commands[commandName];
-            
+
+            // Ogni volta che arriva un messaggio, assembliamo i dati attuali
+            const ctx: CommandContext = {
+                user,
+                text, // Questo ora contiene tutto il testo del messaggio
+                msg,
+                apiClient
+            };
             try {
                 // Passiamo tutto il necessario al comando
-                command.run(chatClient, channel, user, text, msg);
+                await command.run(chatClient, channel, ctx);
             } catch (error) {
                 console.error(`[Commands] Errore durante l'esecuzione di !${commandName}:`, error);
             }

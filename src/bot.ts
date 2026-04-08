@@ -20,7 +20,7 @@ export async function launchBot(authProvider: AuthProvider) {
 
     // 2. Attivazione Moduli (Ognuno col suo onMessage indipendente)
     await automod.setupAutoMod(chatClient, apiClient); // Modulo Sicurezza
-    setupCommandHandler(chatClient);                      // Modulo Comandi
+    setupCommandHandler(chatClient, apiClient);                      // Modulo Comandi
 
     // 3. Log di connessione
     chatClient.onConnect(() => {

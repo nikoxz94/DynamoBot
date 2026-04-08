@@ -1,5 +1,6 @@
-import { ChatClient, ChatMessage } from '@twurple/chat';
+import { ChatClient } from '@twurple/chat';
+import { CommandContext } from '../handlers/command_handler.js';
 
-export const run = (chatClient: ChatClient, channel: string, user: string, _text: string, _msg: ChatMessage) => {
-    chatClient.say(channel, `@${user} Instagram: [link] | Telegram: [link] | Discord: [link]`);
+export const run = (chatClient: ChatClient, channel: string, ctx: CommandContext) => {
+    chatClient.say(channel, `@${ctx.user} Instagram: [link] | Telegram: [link] | Discord: [link]`);
 };
